@@ -5,7 +5,8 @@ USE calender_project;
 CREATE TABLE users (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL UNIQUE,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    has_access BOOLEAN NOT NULL
 );
 
 CREATE TABLE tasks (

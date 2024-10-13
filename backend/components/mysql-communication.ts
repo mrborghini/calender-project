@@ -33,11 +33,16 @@ class MysqlCommunication {
             await this.connect();
         }
 
+        if (!this.conn) {
+            throw "Could not connect to mysql";
+        }
         // Prepare and execute the initial command
-        const prepared = await this.conn?.prepare(command);
+        const prepared = await this.conn.prepare(command);
 
         // Execute the command with the first value, or use the full values array as needed
-        return await prepared?.execute(values);
+        const data = await prepared.execute(values);
+
+        return data;
     }
 }
 

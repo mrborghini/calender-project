@@ -20,7 +20,7 @@ class User extends MysqlCommunication {
         }
 
         const token = jwt.sign({
-            userId: user.id,
+            id: user.id,
             username: user.username,
             hasAccess: user.hasAccess,
         }, this.jwtSecret, { expiresIn: this.jwtExpiration });
@@ -77,7 +77,7 @@ class User extends MysqlCommunication {
             const userData = decoded as UserCreds;
 
             const user = await this.findUserbyUsername(userData.username);
-            
+
             if (!user) {
                 return null;
             }

@@ -8,13 +8,13 @@ class Tasks extends MysqlCommunication {
         const data = await this.executeQuery("SELECT tasks.id, users.username, tasks.description, tasks.current_status, tasks.due_timestamp, title FROM tasks INNER JOIN users ON tasks.created_by = users.id;", []);
 
         if (!data) {
-            return jsonResponse({});
+            return JSON.stringify({});
         }
 
         const row = data[0] as RowDataPacket;
 
         const tasks: TaskData[] = []
-        
+
         for (let i = 0; i < row.length; i++) {
             tasks.push({
                 id: row[i].id,
@@ -26,7 +26,19 @@ class Tasks extends MysqlCommunication {
             });
         }
 
-        return jsonResponse({"amount": tasks.length, tasks})
+        return JSON.stringify({ "amount": tasks.length, tasks });
+    }
+
+    public async addTask(userId: number, title: string, description: string, dueTimestamp: bigint) {
+        await this.executeQuery("INSERT INTO tasks (current_status, due_timestamp, title, description, created_by) VALUES (?, ?, ?, ?, ?)", [
+            "todo",
+            `${dueTimestamp}`,
+            title,
+            description,
+            `${userId}`
+        ]);
+
+        return JSON.stringify({ "message": "Success!" });
     }
 }
 

@@ -2,20 +2,16 @@ import type { ServerWebSocket } from "bun";
 import Logger from "./components/logger";
 import jsonResponse, { handleOptionRequest } from "./components/responses";
 import User from "./components/user";
-import Tasks from "./components/tasks";
+import WsHandler from "./components/wshandler";
 
 async function main() {
     const logger = new Logger("main");
     const user = new User();
-    const tasks = new Tasks();
+    const wsHandler = new WsHandler();
 
     Bun.serve({
         async fetch(req, server) {
             const url = new URL(req.url);
-
-            const token = req.headers.get("authorization");
-
-            const tokenData = await user.parseToken(token);
 
             try {
                 if (req.method === "OPTIONS") {
@@ -37,17 +33,25 @@ async function main() {
                         }
 
                         return await user.login(body.usernameOrEmail, body.password);
-                    case "/api/tasks":
-                        if (!tokenData) {
-                            return jsonResponse({message: "Unauthorized"}, 403);
+                    case "/realtime":
+                        const secTokenData = req.headers.get("sec-websocket-protocol");
+
+                        if (!secTokenData) {
+                            return jsonResponse({ message: "Unauthorized" }, 403);
                         }
 
-                        if (!tokenData.hasAccess) {
-                            return jsonResponse({message: "Unauthorized"}, 403);
+                        const secToken = secTokenData.split(", ")[1];
+
+                        const userTokenData = await user.parseToken(secToken);
+
+                        if (!userTokenData) {
+                            return jsonResponse({ message: "Unauthorized" }, 403);
                         }
-                        
-                        return await tasks.getTasks();
-                    case "/realtime":
+
+                        if (!userTokenData.hasAccess) {
+                            return jsonResponse({ message: "Unauthorized" }, 403);
+                        }
+
                         if (!server.upgrade(req)) {
                             return jsonResponse({ message: "Could not upgrade connection" }, 400);
                         }
@@ -62,12 +66,18 @@ async function main() {
             }
         },
         websocket: {
+            async open(ws: ServerWebSocket<unknown>) {
+                await wsHandler.addConnection(ws);
+                logger.info("New WebSocket connection connected");
+            },
             // Handle messages for WebSocket connections
-            message(ws: ServerWebSocket<unknown>, message: string | Buffer): void | Promise<void> {
-                ws.send(`Echo: ${message as string}`);
+            async message(ws: ServerWebSocket<unknown>, message: string | Buffer): Promise<void> {
+                logger.debug(`Received message: ${message}`);
+                await wsHandler.handleMessage(ws, message as string);
             },
             // Handle WebSocket close events
-            close(_): void | Promise<void> {
+            close(ws: ServerWebSocket<unknown>): void | Promise<void> {
+                wsHandler.removeConnection(ws);
                 logger.info("WebSocket connection closed");
             }
         }

@@ -1,7 +1,7 @@
 import type { RowDataPacket } from "mysql2";
 import MysqlCommunication from "./mysql-communication";
 import jsonResponse from "./responses";
-import type { Task } from "./types/tasks";
+import type { TaskData } from "./types/task-data";
 
 class Tasks extends MysqlCommunication {
     public async getTasks() {
@@ -13,7 +13,7 @@ class Tasks extends MysqlCommunication {
 
         const row = data[0] as RowDataPacket;
 
-        const tasks: Task[] = []
+        const tasks: TaskData[] = []
         
         for (let i = 0; i < row.length; i++) {
             tasks.push({

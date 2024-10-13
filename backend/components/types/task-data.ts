@@ -1,4 +1,4 @@
-interface Task {
+interface TaskData {
     id: BigInt,
     currentStatus: string,
     dueTimestamp: BigInt,
@@ -7,4 +7,4 @@ interface Task {
     username: string,
 }
 
-export type { Task }
+export type { TaskData }

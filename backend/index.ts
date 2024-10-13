@@ -1,45 +1,79 @@
-import returnJson from "./components/return-json";
+import type { ServerWebSocket } from "bun";
+import Logger from "./components/logger";
+import jsonResponse, { handleOptionRequest } from "./components/responses";
 import User from "./components/user";
+import Tasks from "./components/tasks";
 
 async function main() {
+    const logger = new Logger("main");
     const user = new User();
+    const tasks = new Tasks();
 
     Bun.serve({
-        async fetch(req) {
+        async fetch(req, server) {
             const url = new URL(req.url);
 
-            // Set CORS headers
-            const headers = {
-                "Access-Control-Allow-Origin": "*", // Allow all origins
-                "Access-Control-Allow-Methods": "GET, POST, OPTIONS", // Allowed methods
-                "Access-Control-Allow-Headers": "Content-Type", // Allowed headers
-            };
+            const token = req.headers.get("authorization");
 
-            switch (url.pathname) {
-                case "/login":
-                    if (req.method === "OPTIONS") {
-                        // Respond to preflight requests
-                        return new Response(null, {
-                            status: 204,
-                            headers,
-                        });
-                    }
+            const tokenData = await user.parseToken(token);
 
-                    if (req.method === "POST") {
-                        const requestBody = await req.json();
-                        const logindata = await user.login(requestBody.username, requestBody.password);
-                        if (logindata) {
-                            return returnJson(JSON.stringify({ "message": logindata as string }), 200);
+            try {
+                if (req.method === "OPTIONS") {
+                    return handleOptionRequest();
+                }
+
+                switch (url.pathname) {
+                    case "/api":
+                        return jsonResponse({ message: "You have found THE api" });
+                    case "/api/login":
+                        if (req.method !== "POST") {
+                            return jsonResponse({ message: "Wrong method used" }, 400)
                         }
-                    }
-                    return returnJson(JSON.stringify({ "message": "Something went wrong" }), 403);
-                default:
-                    return returnJson(JSON.stringify({ "message": "Not found" }), 404);
+
+                        const body = await req.json();
+
+                        if (!body.usernameOrEmail || !body.password) {
+                            return jsonResponse({ message: "Bad request" }, 400)
+                        }
+
+                        return await user.login(body.usernameOrEmail, body.password);
+                    case "/api/tasks":
+                        if (!tokenData) {
+                            return jsonResponse({message: "Unauthorized"}, 403);
+                        }
+
+                        if (!tokenData.hasAccess) {
+                            return jsonResponse({message: "Unauthorized"}, 403);
+                        }
+                        
+                        return await tasks.getTasks();
+                    case "/realtime":
+                        if (!server.upgrade(req)) {
+                            return jsonResponse({ message: "Could not upgrade connection" }, 400);
+                        }
+                        break;
+                    default:
+                        return jsonResponse({ message: "Not found" }, 404);
+                }
+            }
+            catch (error) {
+                logger.error(`Could not parse json: ${error}`);
+                return jsonResponse({ message: "no json provided" }, 400)
             }
         },
+        websocket: {
+            // Handle messages for WebSocket connections
+            message(ws: ServerWebSocket<unknown>, message: string | Buffer): void | Promise<void> {
+                ws.send(`Echo: ${message as string}`);
+            },
+            // Handle WebSocket close events
+            close(_): void | Promise<void> {
+                logger.info("WebSocket connection closed");
+            }
+        }
     });
 
-    console.log("Listening on localhost:3000");
+    logger.info("Server started on localhost:3000");
 }
 
 main();

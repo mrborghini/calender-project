@@ -2,6 +2,7 @@
   font-family: Roboto;
   padding: 0;
   margin: 0;
+  box-sizing: border-box;
 }
 
 #root {
@@ -9,4 +10,79 @@
   width: 100vw;
   background-color: #333;
   color: white;
+}
+
+.overlay {
+  position: fixed; /* Ensures it stays in place on scroll */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.5); /* Optional: Adds a semi-transparent background */
+  backdrop-filter: blur(5px);
+  z-index: 1000; /* Ensure it appears on top of other content */
+  justify-content: center;
+}
+
+/* Close button */
+.overlay button {
+  font-family: Roboto;
+  max-width: 100px;
+  max-height: 100px;
+  width: 20vw;
+  height: 20vw;
+  border-radius: 5px;
+  font-size: calc(14px + 1vw);
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: red;
+  border: 0;
+  color: white;
+  cursor: pointer;
+}
+
+/* Input container with label and input aligned horizontally */
+.input-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+/* Labels */
+.input-container label {
+  font-family: Roboto;
+  color: white;
+  margin-right: 15px;
+  flex: 0 0 25%; /* Labels take 25% of the row */
+}
+
+/* Inputs and textarea */
+.overlay input, .overlay textarea {
+  width: 70%; /* Inputs take the remaining 70% */
+  background-color: transparent;
+  border: none;
+  color: white;
+  margin: 5px;
+  outline: none;
+  font-family: Roboto;
+  padding: 5px;
+}
+
+/* Specific width for date input */
+.overlay #date {
+  width: 30%; /* Smaller width for date input */
+}
+
+/* Overlay title */
+#overlay-title {
+  font-size: calc(14px + 3vw);
+}
+
+
+
+.home {
+  position: relative;
 }

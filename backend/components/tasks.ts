@@ -1,6 +1,5 @@
 import type { RowDataPacket } from "mysql2";
 import MysqlCommunication from "./mysql-communication";
-import jsonResponse from "./responses";
 import type { TaskData } from "./types/task-data";
 
 class Tasks extends MysqlCommunication {
@@ -39,6 +38,20 @@ class Tasks extends MysqlCommunication {
         ]);
 
         return JSON.stringify({ "message": "Success!" });
+    }
+
+    public async modifyTask(id: number, userId: number, title: string, description: string, dueTimestamp: bigint) {
+        await this.executeQuery(
+            "UPDATE tasks SET current_status = ?, due_timestamp = ?, title = ?, description = ?, created_by = ? WHERE id = ?",
+            [
+                "todo",
+                `${dueTimestamp}`,
+                title,
+                description,
+                `${userId}`,
+                `${id}`
+            ]
+        );
     }
 }
 

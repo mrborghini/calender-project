@@ -42,16 +42,32 @@ class WsHandler {
                 case "addtask":
                     if (!jsonData.title || !jsonData.description || !jsonData.dueTimestamp) {
                         ws.send("Missing required data");
-                        return;
+                        break;
                     }
                     await this.tasks.addTask(user.id, jsonData.title, jsonData.description, jsonData.dueTimestamp);
                     break;
-
+                case "modifytask":
+                    if (!jsonData.title || !jsonData.description || !jsonData.dueTimestamp || !jsonData.id) {
+                        ws.send("Missing required data");
+                        break;
+                    }
+                    await this.tasks.modifyTask(jsonData.id, user.id, jsonData.title, jsonData.description, jsonData.dueTimestamp);
+                    break;
                 default:
                     break;
             }
+
+            await this.sendUpdate();
         } catch (error) {
             this.removeConnection(ws);
+        }
+    }
+
+    private async sendUpdate() {
+        const data = await this.tasks.getTasks();
+
+        for (let i = 0; i < this.connections.length; i++) {
+            this.connections[i].send(data);
         }
     }
 }
